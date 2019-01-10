@@ -3,6 +3,11 @@ sudo: required
 dist: trusty
 language: python
 
+addons:
+  sonarcloud:
+    organization: ${SONARCLOUD_ORG_KEY}  # the key of the org you chose at step #3
+    token: ${SONARCLOUD_TOKEN}
+
 matrix:
     include:
         - python: 2.7
@@ -33,6 +38,7 @@ before_script:
 script: 
   - ulimit -n 2048 # Error with py3 and OSX, max file descriptors
   - ./.ci/travis/run.sh
+  - sonar-scanner
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
