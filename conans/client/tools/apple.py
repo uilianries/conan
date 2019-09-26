@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import subprocess
+
+from conans.client.tools.oss import check_output
 
 
 def is_apple_os(os_):
@@ -15,6 +16,8 @@ def to_apple_arch(arch):
             'x86_64': 'x86_64',
             'armv7': 'armv7',
             'armv8': 'arm64',
+            'armv8_32': 'arm64_32',
+            'armv8.3': 'arm64e',
             'armv7s': 'armv7s',
             'armv7k': 'armv7k'}.get(str(arch))
 
@@ -70,7 +73,7 @@ class XCRun(object):
 
     def _invoke(self, args):
         def cmd_output(cmd):
-            return subprocess.check_output(cmd).decode().strip()
+            return check_output(cmd).strip()
 
         command = ['xcrun', '-find']
         if self.sdk:
@@ -126,7 +129,7 @@ class XCRun(object):
     def strip(self):
         """path to symbol removal utility (STRIP)"""
         return self.find('strip')
-    
+
     @property
     def libtool(self):
         """path to libtool"""

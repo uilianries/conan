@@ -6,13 +6,14 @@ from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.tools import TestBufferConanOutput
 
 
 class BoostJamGeneratorTest(unittest.TestCase):
 
     def variables_setup_test(self):
 
-        conanfile = ConanFile(None, None)
+        conanfile = ConanFile(TestBufferConanOutput(), None)
         conanfile.initialize(Settings({}), EnvValues())
 
         ref = ConanFileReference.loads("MyPkg/0.1@lasote/stables")
@@ -31,14 +32,14 @@ class BoostJamGeneratorTest(unittest.TestCase):
         cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
-        cpp_info.cppflags = ["-cppflag"]
+        cpp_info.cxxflags = ["-cxxflag"]
         cpp_info.public_deps = ["MyPkg"]
         cpp_info.lib_paths.extend(["Path\\with\\slashes", "regular/path/to/dir"])
         cpp_info.include_paths.extend(["other\\Path\\with\\slashes", "other/regular/path/to/dir"])
         conanfile.deps_cpp_info.update(cpp_info, ref.name)
         generator = BoostBuildGenerator(conanfile)
 
-        self.assertEquals(generator.content, """lib MyLib1 :
+        self.assertEqual(generator.content, """lib MyLib1 :
 	: # requirements
 	<name>MyLib1
 	: # default-build
@@ -57,7 +58,7 @@ lib MyLib2 :
 	<define>MYDEFINE2
 	<include>other/Path/with/slashes
 	<include>other/regular/path/to/dir
-	<cxxflags>-cppflag
+	<cxxflags>-cxxflag
 	<ldflags>-sharedlinkflag
 	;
 

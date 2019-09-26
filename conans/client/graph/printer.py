@@ -1,15 +1,16 @@
 from collections import OrderedDict
 
-from conans.client.graph.graph import BINARY_SKIP
+
+from conans.client.graph.graph import BINARY_SKIP, RECIPE_CONSUMER, RECIPE_VIRTUAL,\
+    RECIPE_EDITABLE
 from conans.client.output import Color
 from conans.model.ref import PackageReference
-from conans.model.workspace import WORKSPACE_FILE
 
 
 def _get_python_requires(conanfile):
     result = set()
-    for py_require in getattr(conanfile, "python_requires", []):
-        result.add(py_require.conan_ref)
+    for _, py_require in getattr(conanfile, "python_requires", {}).items():
+        result.add(py_require.ref)
         result.update(_get_python_requires(py_require.conanfile))
     return result
 
@@ -20,30 +21,32 @@ def print_graph(deps_graph, out):
     python_requires = set()
     for node in sorted(deps_graph.nodes):
         python_requires.update(_get_python_requires(node.conanfile))
-        if not node.conan_ref:
+        if node.recipe in (RECIPE_CONSUMER, RECIPE_VIRTUAL):
             continue
-        package_id = PackageReference(node.conan_ref, node.conanfile.info.package_id())
+        pref = PackageReference(node.ref, node.package_id)
         if node.build_require:
-            build_requires.setdefault(package_id, []).append(node)
+            build_requires.setdefault(pref, []).append(node)
         else:
-            requires.setdefault(package_id, []).append(node)
+            requires.setdefault(pref, []).append(node)
 
     out.writeln("Requirements", Color.BRIGHT_YELLOW)
 
     def _recipes(nodes):
-        for package_id, list_nodes in nodes.items():
+        for _, list_nodes in nodes.items():
             node = list_nodes[0]  # For printing recipes, we can use the first one
-            if node.remote == WORKSPACE_FILE:
-                from_text = "from '%s'" % WORKSPACE_FILE
+            if node.recipe == RECIPE_EDITABLE:
+                from_text = "from user folder"
             else:
-                from_text = "from local cache" if not node.remote else "from '%s'" % node.remote.name
-            out.writeln("    %s %s - %s" % (repr(node.conan_ref), from_text, node.recipe), Color.BRIGHT_CYAN)
+                from_text = ("from local cache" if not node.remote
+                             else "from '%s'" % node.remote.name)
+            out.writeln("    %s %s - %s" % (str(node.ref), from_text, node.recipe),
+                        Color.BRIGHT_CYAN)
 
     _recipes(requires)
     if python_requires:
         out.writeln("Python requires", Color.BRIGHT_YELLOW)
         for p in python_requires:
-            out.writeln("    %s" % repr(p), Color.BRIGHT_CYAN)
+            out.writeln("    %s" % repr(p.copy_clear_rev()), Color.BRIGHT_CYAN)
     out.writeln("Packages", Color.BRIGHT_YELLOW)
 
     def _packages(nodes):
@@ -55,7 +58,7 @@ def print_graph(deps_graph, out):
                 binary.remove(BINARY_SKIP)
             assert len(binary) == 1
             binary = binary.pop()
-            out.writeln("    %s - %s" % (repr(package_id), binary), Color.BRIGHT_CYAN)
+            out.writeln("    %s - %s" % (str(package_id), binary), Color.BRIGHT_CYAN)
     _packages(requires)
 
     if build_requires:

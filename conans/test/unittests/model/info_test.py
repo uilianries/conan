@@ -63,10 +63,10 @@ class ConanInfoTest(unittest.TestCase):
                     'settings': {'arch': 'x86_64', 'compiler.libcxx': 'libstdc++11',
                                  'compiler.version': '5.2', 'os': 'Linux',
                                  'build_type': 'Debug', 'compiler': 'gcc'}}
-        self.assertEquals(min_serial, expected)
+        self.assertEqual(min_serial, expected)
 
         dump = info.dumps()
-        self.assertEquals(dump, info_text)
+        self.assertEqual(dump, info_text)
 
     def test_modes(self):
         info_text = '''[settings]
@@ -134,3 +134,15 @@ class ConanInfoTest(unittest.TestCase):
         self.assertEqual(info.requires.dumps(), "bzip2/1.2.3-alpha1+build123@lasote/testing:sha1\n"
                                                 "poco/2.3.4+build123@lasote/stable:sha3\n"
                                                 "zlib/0.3@lasote/testing:sha2")
+
+        info2 = info_text.replace("zlib/0.3@lasote/testing",
+                                  "zlib/0.3@lasote/testing#RREV1")
+        info = ConanInfo.loads(info2)
+        info.requires.recipe_revision_mode()
+        self.assertEqual(info.requires.dumps(), "bzip2/1.2.3-alpha1+build123@lasote/testing:sha1\n"
+                                                "poco/2.3.4+build123@lasote/stable:sha3\n"
+                                                "zlib/0.3@lasote/testing#RREV1:sha2")
+        info2 = "[full_requires]\nzlib/0.3@lasote/testing#RREV1:sha2#PREV1"
+        info = ConanInfo.loads(info2)
+        info.requires.package_revision_mode()
+        self.assertEqual(info.requires.dumps(), "zlib/0.3@lasote/testing#RREV1:sha2#PREV1")

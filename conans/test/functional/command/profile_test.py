@@ -4,6 +4,7 @@ import unittest
 from conans.test.utils.profiles import create_profile
 from conans.test.utils.tools import TestClient
 from conans.util.files import load
+import platform
 
 
 class ProfileTest(unittest.TestCase):
@@ -20,42 +21,59 @@ class ProfileTest(unittest.TestCase):
         client.save({"conanfile.txt": "",
                      "mylocalprofile": "\n".join(profile)})
         client.run("install . -pr=mylocalprofile")
-        self.assertIn("PROJECT: Generated conaninfo.txt", client.out)
+        self.assertIn("conanfile.txt: Generated conaninfo.txt", client.out)
 
     def empty_test(self):
         client = TestClient()
         client.run("profile list")
-        self.assertIn("No profiles defined", client.user_io.out)
+        self.assertIn("No profiles defined", client.out)
 
     def list_test(self):
         client = TestClient()
-        create_profile(client.client_cache.profiles_path, "profile3")
-        create_profile(client.client_cache.profiles_path, "profile1")
-        create_profile(client.client_cache.profiles_path, "profile2")
+        profiles = ["profile1", "profile2", "profile3",
+                    "nested" + os.path.sep + "profile4",
+                    "nested" + os.path.sep + "two" + os.path.sep + "profile5",
+                    "nested" + os.path.sep + "profile6"]
+        if platform.system() != "Windows":
+            profiles.append("symlink_me" + os.path.sep + "profile7")
+        for profile in profiles:
+            create_profile(client.cache.profiles_path, profile)
+
+        if platform.system() != "Windows":
+            os.symlink(os.path.join(client.cache.profiles_path, 'symlink_me'),
+                       os.path.join(client.cache.profiles_path, 'link'))
+            # profile7 will be shown twice because it is symlinked.
+            profiles.append("link" + os.path.sep + "profile7")
+
         # Make sure local folder doesn't interact with profiles
         os.mkdir(os.path.join(client.current_folder, "profile3"))
         client.run("profile list")
-        self.assertEqual(list(["profile1", "profile2", "profile3"]),
-                         list(str(client.user_io.out).splitlines()))
+        profiles.sort()
+        self.assertEqual(profiles, list(str(client.out).splitlines()))
 
     def show_test(self):
         client = TestClient()
-        create_profile(client.client_cache.profiles_path, "profile1", settings={"os": "Windows"},
+        create_profile(client.cache.profiles_path, "profile1", settings={"os": "Windows"},
                        options=[("MyOption", "32")])
-        create_profile(client.client_cache.profiles_path, "profile3",
+        create_profile(client.cache.profiles_path, "profile3",
                        env=[("package:VAR", "value"), ("CXX", "/path/tomy/g++_build"),
                             ("CC", "/path/tomy/gcc_build")])
         client.run("profile show profile1")
-        self.assertIn("[settings]\nos=Windows", client.user_io.out)
-        self.assertIn("MyOption=32", client.user_io.out)
+        self.assertIn("[settings]\nos=Windows", client.out)
+        self.assertIn("MyOption=32", client.out)
         client.run("profile show profile3")
-        self.assertIn("CC=/path/tomy/gcc_build", client.user_io.out)
-        self.assertIn("CXX=/path/tomy/g++_build", client.user_io.out)
-        self.assertIn("package:VAR=value", client.user_io.out)
+        self.assertIn("CC=/path/tomy/gcc_build", client.out)
+        self.assertIn("CXX=/path/tomy/g++_build", client.out)
+        self.assertIn("package:VAR=value", client.out)
 
     def profile_update_and_get_test(self):
         client = TestClient()
         client.run("profile new ./MyProfile --detect")
+        if "WARNING: GCC OLD ABI COMPATIBILITY" in client.out:
+            self.assertIn("Or edit '{}/MyProfile' and "
+                          "set compiler.libcxx=libstdc++11".format(client.current_folder),
+                          client.out)
+
         pr_path = os.path.join(client.current_folder, "MyProfile")
 
         client.run("profile update settings.os=FakeOS ./MyProfile")
@@ -63,37 +81,37 @@ class ProfileTest(unittest.TestCase):
         self.assertNotIn("\nos=Linux", load(pr_path))
 
         client.run("profile get settings.os ./MyProfile")
-        self.assertEquals(client.out, "FakeOS\n")
+        self.assertEqual(client.out, "FakeOS\n")
 
         client.run("profile update settings.compiler.version=88 ./MyProfile")
         self.assertIn("compiler.version=88", load(pr_path))
 
         client.run("profile get settings.compiler.version ./MyProfile")
-        self.assertEquals(client.out, "88\n")
+        self.assertEqual(client.out, "88\n")
 
         client.run("profile update options.MyOption=23 ./MyProfile")
         self.assertIn("[options]\nMyOption=23", load(pr_path))
 
         client.run("profile get options.MyOption ./MyProfile")
-        self.assertEquals(client.out, "23\n")
+        self.assertEqual(client.out, "23\n")
 
         client.run("profile update options.Package:MyOption=23 ./MyProfile")
         self.assertIn("Package:MyOption=23", load(pr_path))
 
         client.run("profile get options.Package:MyOption ./MyProfile")
-        self.assertEquals(client.out, "23\n")
+        self.assertEqual(client.out, "23\n")
 
         client.run("profile update options.Package:OtherOption=23 ./MyProfile")
         self.assertIn("Package:OtherOption=23", load(pr_path))
 
         client.run("profile get options.Package:OtherOption ./MyProfile")
-        self.assertEquals(client.out, "23\n")
+        self.assertEqual(client.out, "23\n")
 
         client.run("profile update env.OneMyEnv=MYVALUe ./MyProfile")
         self.assertIn("[env]\nOneMyEnv=MYVALUe", load(pr_path))
 
         client.run("profile get env.OneMyEnv ./MyProfile")
-        self.assertEquals(client.out, "MYVALUe\n")
+        self.assertEqual(client.out, "MYVALUe\n")
 
         # Now try the remove
 
@@ -116,13 +134,13 @@ class ProfileTest(unittest.TestCase):
 
         # Remove a non existent key
         client.run("profile remove settings.os ./MyProfile", assert_error=True)
-        self.assertIn("Profile key 'settings.os' doesn't exist", client.user_io.out)
+        self.assertIn("Profile key 'settings.os' doesn't exist", client.out)
 
         client.run("profile remove options.foo ./MyProfile", assert_error=True)
-        self.assertIn("Profile key 'options.foo' doesn't exist", client.user_io.out)
+        self.assertIn("Profile key 'options.foo' doesn't exist", client.out)
 
         client.run("profile remove env.foo ./MyProfile", assert_error=True)
-        self.assertIn("Profile key 'env.foo' doesn't exist", client.user_io.out)
+        self.assertIn("Profile key 'env.foo' doesn't exist", client.out)
 
     def profile_update_env_test(self):
         client = TestClient()
@@ -144,7 +162,7 @@ class ProfileTest(unittest.TestCase):
         client.run("profile new ./MyProfile")
         pr_path = os.path.join(client.current_folder, "MyProfile")
         self.assertTrue(os.path.exists(pr_path))
-        self.assertEquals(load(pr_path), """[settings]
+        self.assertEqual(load(pr_path), """[settings]
 [options]
 [build_requires]
 [env]
@@ -156,9 +174,46 @@ class ProfileTest(unittest.TestCase):
         self.assertIn("os=", load(pr_path))
 
         client.run("profile new ./MyProfile2 --detect", assert_error=True)
-        self.assertIn("Profile already exists", client.user_io.out)
+        self.assertIn("Profile already exists", client.out)
 
         client.run("profile new MyProfile3")
-        pr_path = os.path.join(client.client_cache.profiles_path, "MyProfile3")
+        pr_path = os.path.join(client.cache.profiles_path, "MyProfile3")
         self.assertTrue(os.path.exists(pr_path))
         self.assertNotIn("os=", load(pr_path))
+
+    def profile_force_new_test(self):
+        client = TestClient()
+
+        empty_profile = """[settings]
+[options]
+[build_requires]
+[env]
+"""
+        client.run("profile new ./MyProfile")
+        pr_path = os.path.join(client.current_folder, "MyProfile")
+        self.assertTrue(os.path.exists(pr_path))
+        self.assertEqual(load(pr_path), empty_profile)
+
+        client.run("profile new ./MyProfile --detect", assert_error=True)
+        self.assertIn("Profile already exists", client.out)
+
+        client.run("profile new ./MyProfile --detect --force", assert_error=False)
+        self.assertNotEqual(load(pr_path), empty_profile)
+
+        detected_profile = load(pr_path)
+
+        client.run("profile update settings.os=FakeOS ./MyProfile")
+        self.assertIn("\nos=FakeOS", load(pr_path))
+
+        client.run("profile update env.MyEnv=MYVALUe ./MyProfile")
+        self.assertIn("[env]\nMyEnv=MYVALUe", load(pr_path))
+
+        client.run("profile new ./MyProfile --detect --force", assert_error=False)
+        self.assertNotIn("\nos=FakeOS", load(pr_path))
+        self.assertNotIn("[env]\nMyEnv=MYVALUe", load(pr_path))
+        self.assertEqual(load(pr_path), detected_profile)
+
+    def missing_subarguments_test(self):
+        client = TestClient()
+        client.run("profile", assert_error=True)
+        self.assertIn("ERROR: Exiting with code: 2", client.out)

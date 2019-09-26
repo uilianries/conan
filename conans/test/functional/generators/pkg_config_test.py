@@ -2,12 +2,6 @@ import os
 import platform
 import unittest
 
-from conans.client.generators.pkg_config import PkgConfigGenerator
-from conans.model.build_info import CppInfo
-from conans.model.conan_file import ConanFile
-from conans.model.env_info import EnvValues
-from conans.model.ref import ConanFileReference
-from conans.model.settings import Settings
 from conans.test.utils.tools import TestClient
 from conans.util.files import load
 
@@ -60,7 +54,7 @@ Description: Conan package: MyLib
 Version: 0.1
 Libs: -L${libdir} -L${libdir3}%s
 Cflags: -I${includedir}""" % expected_rpaths
-        self.assertEquals("\n".join(pc_content.splitlines()[1:]), expected_content)
+        self.assertEqual("\n".join(pc_content.splitlines()[1:]), expected_content)
 
         def assert_is_abs(path):
             self.assertTrue(os.path.isabs(path))
@@ -98,7 +92,7 @@ class PkgConfigConan(ConanFile):
         pc_path = os.path.join(client.current_folder, "MyLib.pc")
         self.assertTrue(os.path.exists(pc_path))
         pc_content = load(pc_path)
-        self.assertEquals("\n".join(pc_content.splitlines()[1:]),
+        self.assertEqual("\n".join(pc_content.splitlines()[1:]),
                           """
 Name: MyLib
 Description: Conan package: MyLib

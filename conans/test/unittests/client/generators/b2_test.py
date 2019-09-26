@@ -7,6 +7,7 @@ from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.tools import TestBufferConanOutput
 
 
 class B2GeneratorTest(unittest.TestCase):
@@ -20,7 +21,7 @@ class B2GeneratorTest(unittest.TestCase):
         settings.build_type = "Release"
         settings.cppstd = "gnu17"
 
-        conanfile = ConanFile(None, None)
+        conanfile = ConanFile(TestBufferConanOutput(), None)
         conanfile.initialize(Settings({}), EnvValues())
         conanfile.settings = settings
 
@@ -40,7 +41,7 @@ class B2GeneratorTest(unittest.TestCase):
         cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
-        cpp_info.cppflags = ["-cppflag"]
+        cpp_info.cxxflags = ["-cxxflag"]
         cpp_info.public_deps = ["MyPkg"]
         cpp_info.lib_paths.extend(["Path\\with\\slashes", "regular/path/to/dir"])
         cpp_info.include_paths.extend(["other\\Path\\with\\slashes", "other/regular/path/to/dir"])
@@ -80,6 +81,10 @@ rule project-define ( id )
         : constant-if call-in-project
         : $(id-mod)
         : constant-if call-in-project ;
+    if [ project.is-jamroot-module $(base-project-mod) ]
+    {
+        use-project /$(id) : $(id) ;
+    }
     return $(id-mod) ;
 }
 
@@ -177,7 +182,7 @@ constant-if defines(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
     ;
 
 constant-if cppflags(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "-cppflag"
+    "-cxxflag"
     ;
 
 constant-if cflags(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
@@ -261,7 +266,7 @@ constant-if defines(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
     ;
 
 constant-if cppflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "-cppflag"
+    "-cxxflag"
     ;
 
 constant-if sharedlinkflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
@@ -327,4 +332,12 @@ if $(__define_targets__) {
         }
 
         for ck, cv in generator.content.items():
-            self.assertEquals(cv, content[ck])
+            self.assertEqual(cv, content[ck])
+
+    def b2_empty_settings_test(self):
+        conanfile = ConanFile(TestBufferConanOutput(), None)
+        conanfile.initialize(Settings({}), EnvValues())
+
+        generator = B2Generator(conanfile)
+        # fails if generator doesn't support empty settings
+        generator.content

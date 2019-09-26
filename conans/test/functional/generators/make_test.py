@@ -4,16 +4,8 @@ import unittest
 
 from nose.plugins.attrib import attr
 
-from conans.client.generators import MakeGenerator
 from conans.client.tools import chdir, replace_in_file
-from conans.model.build_info import CppInfo
-from conans.model.conan_file import ConanFile
-from conans.model.env_info import EnvValues
-from conans.model.ref import ConanFileReference
-from conans.model.settings import Settings
-from conans.test.utils.test_files import temp_folder
 from conans.test.utils.tools import TestClient
-from conans.util.files import save
 
 
 class MakeGeneratorTest(unittest.TestCase):
@@ -25,8 +17,9 @@ class MakeGeneratorTest(unittest.TestCase):
         client.run("new myhello/1.0.0 --sources")
         conanfile_path = os.path.join(client.current_folder, "conanfile.py")
         replace_in_file(conanfile_path, "{\"shared\": [True, False]}",
-                        "{\"shared\": [True, False], \"fPIC\": [True, False]}")
-        replace_in_file(conanfile_path, "\"shared=False\"", "\"shared=False\", \"fPIC=True\"")
+                        "{\"shared\": [True, False], \"fPIC\": [True, False]}", output=client.out)
+        replace_in_file(conanfile_path, "\"shared=False\"", "\"shared=False\", \"fPIC=True\"",
+                        output = client.out)
         client.run("create . danimtb/testing")
         hellowrapper_include = """
 #pragma once
@@ -49,7 +42,7 @@ include conanbuildinfo.mak
 #     Make variables for a sample App
 #----------------------------------------
 
-INCLUDE_PATHS = \
+INCLUDE_DIRS = \
 ./include
 
 CXX_SRCS = \
@@ -72,10 +65,10 @@ CXXFLAGS += \
 #----------------------------------------
 
 CFLAGS              += $(CONAN_CFLAGS)
-CXXFLAGS            += $(CONAN_CPPFLAGS)
-CPPFLAGS            += $(addprefix -I, $(INCLUDE_PATHS) $(CONAN_INCLUDE_PATHS))
+CXXFLAGS            += $(CONAN_CXXFLAGS)
+CPPFLAGS            += $(addprefix -I, $(INCLUDE_DIRS) $(CONAN_INCLUDE_DIRS))
 CPPFLAGS            += $(addprefix -D, $(CONAN_DEFINES))
-LDFLAGS             += $(addprefix -L, $(CONAN_LIB_PATHS))
+LDFLAGS             += $(addprefix -L, $(CONAN_LIB_DIRS))
 LDLIBS              += $(addprefix -l, $(CONAN_LIBS))
 SHAREDLINKFLAGS     += $(CONAN_SHAREDLINKFLAGS)
 
@@ -180,10 +173,10 @@ EXELINKFLAGS += \
 #----------------------------------------
 
 CFLAGS              += $(CONAN_CFLAGS)
-CXXFLAGS            += $(CONAN_CPPFLAGS)
-CPPFLAGS            += $(addprefix -I, $(CONAN_INCLUDE_PATHS))
+CXXFLAGS            += $(CONAN_CXXFLAGS)
+CPPFLAGS            += $(addprefix -I, $(CONAN_INCLUDE_DIRS))
 CPPFLAGS            += $(addprefix -D, $(CONAN_DEFINES))
-LDFLAGS             += $(addprefix -L, $(CONAN_LIB_PATHS))
+LDFLAGS             += $(addprefix -L, $(CONAN_LIB_DIRS))
 LDLIBS              += $(addprefix -l, $(CONAN_LIBS))
 EXELINKFLAGS        += $(CONAN_EXELINKFLAGS)
 
@@ -220,17 +213,20 @@ hellowrapper/1.0@danimtb/testing
 [generators]
 make
 """
-        client.save({"src/main.cpp": main, "Makefile": makefile, "conanfile.txt": conanfile_txt},
-                    clean_first=True)
-        with chdir(client.current_folder):
-            client.run("install .")
-            client.runner("make exe")
-            client.runner("./main")
-            self.assertIn("Hello World Release!", client.out)
 
-            # Test it also builds with shared lib
-            client.run("install . -o hellowrapper:shared=True")
-            client.runner("rm main main.o")
-            client.runner("make exe")
-            client.runner("ldd main")
-            self.assertIn("libhellowrapper.so", client.out)
+        client.save({"src/main.cpp": main,
+                     "Makefile": makefile,
+                     "conanfile.txt": conanfile_txt},
+                    clean_first=True)
+
+        client.run("install .")
+        client.run_command("make exe")
+        client.run_command("./main")
+        self.assertIn("Hello World Release!", client.out)
+
+        # Test it also builds with shared lib
+        client.run("install . -o hellowrapper:shared=True")
+        client.run_command("rm main main.o")
+        client.run_command("make exe")
+        client.run_command("ldd main")
+        self.assertIn("libhellowrapper.so", client.out)

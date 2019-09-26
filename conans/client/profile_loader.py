@@ -130,7 +130,7 @@ def _load_profile(text, profile_path, default_folder):
 
         # Apply the automatic PROFILE_DIR variable
         if cwd:
-            inherited_vars["PROFILE_DIR"] = os.path.abspath(cwd)
+            inherited_vars["PROFILE_DIR"] = os.path.abspath(cwd).replace('\\', '/')
             # Allows PYTHONPATH=$PROFILE_DIR/pythontools
 
         # Replace the variables from parents in the current profile
@@ -144,7 +144,7 @@ def _load_profile(text, profile_path, default_folder):
         # Merge the inherited profile with the readed from current profile
         _apply_inner_profile(doc, inherited_profile)
 
-        # Return the intherited vars to apply them in the parent profile if exists
+        # Return the inherited vars to apply them in the parent profile if exists
         inherited_vars.update(profile_parser.vars)
         return inherited_profile, inherited_vars
 
@@ -161,8 +161,8 @@ def _load_single_build_require(profile, line):
         pattern, req_list = "*", line
     else:
         pattern, req_list = tokens
-    req_list = [ConanFileReference.loads(r.strip()) for r in req_list.split(",")]
-    profile.build_requires.setdefault(pattern, []).extend(req_list)
+    refs = [ConanFileReference.loads(reference.strip()) for reference in req_list.split(",")]
+    profile.build_requires.setdefault(pattern, []).extend(refs)
 
 
 def _apply_inner_profile(doc, base_profile):
@@ -213,16 +213,20 @@ def _apply_inner_profile(doc, base_profile):
     base_profile.env_values = current_env_values
 
 
-def profile_from_args(profile, settings, options, env, cwd, client_cache):
+def profile_from_args(profiles, settings, options, env, cwd, cache):
     """ Return a Profile object, as the result of merging a potentially existing Profile
     file and the args command-line arguments
     """
-    default_profile = client_cache.default_profile  # Ensures a default profile creating
+    default_profile = cache.default_profile  # Ensures a default profile creating
 
-    if profile is None:
+    if profiles is None:
         result = default_profile
     else:
-        result, _ = read_profile(profile, cwd, client_cache.profiles_path)
+        result = Profile()
+        for p in profiles:
+            tmp, _ = read_profile(p, cwd, cache.profiles_path)
+            result.update(tmp)
+
     args_profile = _profile_parse_args(settings, options, env)
 
     if result:

@@ -1,6 +1,8 @@
 import os
 import unittest
 
+import six
+
 from conans.model.env_info import DepsEnvInfo
 from conans.model.profile import Profile
 from conans.model.settings import Settings
@@ -95,8 +97,8 @@ class BuildInfoMock(object):
         return ["cflag1"]
 
     @property
-    def cppflags(self):
-        return ["cppflag1"]
+    def cxxflags(self):
+        return ["cxxflag1"]
 
 
 class MockConanfile(object):
@@ -156,12 +158,12 @@ class ProfilesEnvironmentTest(unittest.TestCase):
         self.client.save({CONANFILE: conanfile_scope_env}, clean_first=True)
         self.client.run("install . --build=missing --pr scopes_env")
         self.client.run("build .")
-        self.assertRegexpMatches(str(self.client.user_io.out), "PATH=['\"]*/path/to/my/folder")
+        six.assertRegex(self, str(self.client.out), "PATH=['\"]*/path/to/my/folder")
         self._assert_env_variable_printed("CC", "/path/tomy/gcc_build")
         self._assert_env_variable_printed("CXX", "/path/tomy/g++_build")
 
     def _assert_env_variable_printed(self, name, value):
-        self.assertIn("%s=%s" % (name, value), self.client.user_io.out)
+        self.assertIn("%s=%s" % (name, value), self.client.out)
 
     def _create_profile(self, name, settings, env=None):
         env = env or {}
@@ -169,4 +171,4 @@ class ProfilesEnvironmentTest(unittest.TestCase):
         profile._settings = settings or {}
         for varname, value in env.items():
             profile.env_values.add(varname, value)
-        save(os.path.join(self.client.client_cache.profiles_path, name), "include(default)\n" + profile.dumps())
+        save(os.path.join(self.client.cache.profiles_path, name), "include(default)\n" + profile.dumps())

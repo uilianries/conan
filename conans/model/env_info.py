@@ -18,7 +18,8 @@ class EnvValues(object):
     with the -e or profiles etc.
         self._data is a dictionary with: {package: {var: value}}
             "package" can be None if the var is global.
-            "value" can be a list or a string. If it's a list the variable is appendable like PATH or PYTHONPATH
+            "value" can be a list or a string. If it's a list the variable
+            is appendable like PATH or PYTHONPATH
     """
 
     def __init__(self):
@@ -254,7 +255,7 @@ class DepsEnvInfo(EnvInfo):
                 else:
                     self.vars[varname] = merge_lists(self.vars[varname], [value])
             else:
-                logger.warn("DISCARDED variable %s=%s from %s" % (varname, value, pkg_name))
+                logger.warning("DISCARDED variable %s=%s from %s" % (varname, value, pkg_name))
 
     def update_deps_env_info(self, dep_env_info):
         assert isinstance(dep_env_info, DepsEnvInfo)

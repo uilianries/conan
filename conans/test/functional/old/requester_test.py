@@ -1,5 +1,7 @@
 import unittest
 
+import six
+
 from conans.client import tools
 from conans.test.utils.tools import TestClient
 from conans.util.files import save
@@ -23,15 +25,13 @@ class RequesterTest(unittest.TestCase):
 [general]
 request_timeout=2
 """
-        save(client.client_cache.conan_conf_path, conf)
-        client.init_dynamic_vars()
+        save(client.cache.conan_conf_path, conf)
 
-        self.assertEquals(client.requester.get("MyUrl"), 2.0)
+        self.assertEqual(client.requester.get("MyUrl"), 2.0)
 
         with tools.environment_append({"CONAN_REQUEST_TIMEOUT": "4.3"}):
             client = TestClient(requester_class=MyRequester)
-            client.init_dynamic_vars()
-            self.assertEquals(client.requester.get("MyUrl"), 4.3)
+            self.assertEqual(client.requester.get("MyUrl"), 4.3)
 
     def requester_timeout_errors_test(self):
         client = TestClient(requester_class=MyRequester)
@@ -39,8 +39,9 @@ request_timeout=2
 [general]
 request_timeout=any_string
 """
-        save(client.client_cache.conan_conf_path, conf)
-        with self.assertRaisesRegexp(Exception, "Specify a numeric parameter for 'request_timeout'"):
+        save(client.cache.conan_conf_path, conf)
+        with six.assertRaisesRegex(self, Exception,
+                                   "Specify a numeric parameter for 'request_timeout'"):
             client.run("install Lib/1.0@conan/stable")
 
     def no_request_timeout_test(self):
@@ -49,9 +50,5 @@ request_timeout=any_string
         conf = """
 [general]
 """
-        save(client.client_cache.conan_conf_path, conf)
-        client.init_dynamic_vars()
-        self.assertEquals(client.requester.get("MyUrl"), "NOT SPECIFIED")
-
-
-
+        save(client.cache.conan_conf_path, conf)
+        self.assertEqual(client.requester.get("MyUrl"), "NOT SPECIFIED")
