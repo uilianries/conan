@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from collections import namedtuple
 
 import six
@@ -9,6 +10,8 @@ from conans.model.ref import ConanFileReference
 from conans.model.requires import Requirements
 from conans.test.unittests.model.transitive_reqs_test import GraphTest
 from conans.test.utils.conanfile import TestConanFile
+from conans.test.utils.tools import GenConanfile, TurboTestClient, TestServer, \
+    NO_SETTINGS_PACKAGE_ID
 from conans.test.utils.tools import test_processed_profile
 
 
@@ -101,7 +104,7 @@ class VersionRangesTest(GraphTest):
             deps_graph = self.build_graph(TestConanFile("Hello", "1.2",
                                                         requires=["Say/[%s]@myuser/testing" % expr]),
                                           update=True)
-            self.assertEqual(self.remote_manager.count, {'Say/*@myuser/testing': 1})
+            self.assertEqual(self.remote_manager.count, {'Say': 1})
             self.assertEqual(2, len(deps_graph.nodes))
             hello = _get_nodes(deps_graph, "Hello")[0]
             say = _get_nodes(deps_graph, "Say")[0]
@@ -147,7 +150,7 @@ class HelloConan(ConanFile):
                                                   Edge(dep1, say), Edge(dep2, say)})
 
         # Most important check: counter of calls to remote
-        self.assertEqual(self.remote_manager.count, {'Say/*@myuser/testing': 1})
+        self.assertEqual(self.remote_manager.count, {'Say': 1})
 
     @parameterized.expand([("", "0.3", None, None),
                            ('"Say/1.1@myuser/testing"', "1.1", False, False),
@@ -266,3 +269,23 @@ class Project(ConanFile):
         conanfile = other.conanfile
         self.assertEqual(conanfile.version, "2.0.11549")
         self.assertEqual(conanfile.name, "other")
+
+    def different_user_channel_resolved_correctly_test(self):
+        server1 = TestServer()
+        server2 = TestServer()
+        servers = OrderedDict([("server1", server1), ("server2", server2)])
+
+        client = TurboTestClient(servers=servers)
+        ref1 = ConanFileReference.loads("lib/1.0@conan/stable")
+        ref2 = ConanFileReference.loads("lib/1.0@conan/testing")
+
+        client.create(ref1, conanfile=GenConanfile())
+        client.upload_all(ref1, remote="server1")
+
+        client.create(ref2, conanfile=GenConanfile())
+        client.upload_all(ref2, remote="server2")
+
+        client2 = TurboTestClient(servers=servers)
+        client2.run("install lib/[>=1.0]@conan/testing")
+        self.assertIn("lib/1.0@conan/testing: Retrieving package {} "
+                      "from remote 'server2' ".format(NO_SETTINGS_PACKAGE_ID), client2.out)
