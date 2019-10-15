@@ -1,8 +1,8 @@
 ---
-name: 'Bug: Bug Report'
+name: 'Bug Report'
 about: 'Report a bug, something does not work as it supposed to'
 title: '[bug] SHORT DESCRIPTION'
-labels: bug
+labels: 'type: bug'
 ---
 
 <!--
@@ -12,30 +12,32 @@ labels: bug
   To help us debug your issue please explain:
 -->
 
-### Package and Environment Details (include every applicable attribute)
-  * Package Name/Version: **zlib/1.2.8**
-  * Operating System+version: **Linux Ubuntu 18.04**
-  * Compiler+version: **GCC 8**
-  * Docker image: **conanio/gcc8**
-  * Conan version: **conan 1.18.0**
-  * Python version: **Python 3.7.4**
-
-
-### Conan profile (output of `conan profile show default` or `conan profile show <profile>` if custom profile is in use)
-```
-Put your profile output here
-```
-
+### Environment Details (include every applicable attribute)
+  * Operating System+version:
+  * Compiler+version:
+  * Conan version:
+  * Python version:
 
 ### Steps to reproduce (Include if Applicable)
 
 
+### Logs (Executed commands with output) (Include/Attach if Applicable)
 
-### Logs (Include/Attach if Applicable)
+<!--
+  Your log content should be related to the bug description, it can be:
+  - Conan command output
+  - Server output (Artifactory, conan_server)
+
+  To increase the logging level, you can configure the environment variable:
+    https://docs.conan.io/en/latest/reference/env_vars.html#conan-logging-level
+  Also, you can configure Conan logs if you need:
+    https://docs.conan.io/en/latest/mastering/logging.html
+-->
+
 <details><summary>Click to expand log</summary>
 
 ```
-Put your log output here
+Put your log output here.
 ```
 
 </details>
