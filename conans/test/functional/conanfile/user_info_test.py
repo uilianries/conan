@@ -65,3 +65,32 @@ class UserInfoTest(unittest.TestCase):
         # Now try local command with a consumer
         client.run('install . --build')
         client.run("build .")
+
+    def test_attribute_error(self):
+        client = TestClient()
+        base = textwrap.dedent("""
+            from conans import ConanFile
+
+            class MyConanfile(ConanFile):
+                name = "foobar"
+                version = "0.1"
+            """)
+        client.save({CONANFILE: base})
+        client.run("export . user/testing")
+
+        broken = textwrap.dedent("""
+            from conans import ConanFile
+
+            class MyConanfile(ConanFile):
+                name = "broken"
+                version = "0.1"
+                requires = "foobar/0.1@user/testing"
+
+                def build(self):
+                    assert(self.deps_user_info["foobar"].version=="0.1")
+                    assert(self.deps_user_info["poco"].VAR1=="2")
+                """)
+        client.save({CONANFILE: broken}, clean_first=True)
+        client.run("export . broken/0.1@user/testing")
+        client.run('install broken/0.1@user/testing --build -g txt', assert_error=True)
+        self.assertIn("AttributeError:", client.out)
