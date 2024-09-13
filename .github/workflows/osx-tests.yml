@@ -31,6 +31,38 @@ jobs:
           pip install -r conans/requirements_server.txt
           pip install -r conans/requirements_dev.txt
 
+      - name: Install Rosetta 2
+        run: |
+          /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
+      - name: Install CMake versions
+        working-directory: /tmp
+        run: |
+          for version in 3.15.7 3.16.9 3.17.5; do
+            wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-Darwin-x86_64.tar.gz \
+              --exclude=bin/cmake-gui \
+              --exclude=doc/cmake \
+              --exclude=share/cmake-${version%.*}/Help \
+              --exclude=share/vim \
+              --exclude=share/vim
+            mkdir -p /opt/cmake/${version}
+            cp -fR cmake-${version}-Darwin-x86_64/* /opt/cmake/${version}
+            rm -rf cmake-${version}-Darwin-x86_64
+            rm cmake-${version}-Darwin-x86_64.tar.gz
+          done
+          for version in 3.19.7 3.23.1; do
+            wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-macos-universal.tar.gz \
+                --exclude=bin/cmake-gui \
+                --exclude=doc/cmake \
+                --exclude=share/cmake-${version%.*}/Help \
+                --exclude=share/vim \
+                --exclude=share/vim
+              mkdir -p /opt/cmake/${version}
+              cp -fR cmake-${version}-macos-universal/* /opt/cmake/${version}
+              rm -rf cmake-${version}-macos-universal
+              rm cmake-${version}-macos-universal.tar.gz
+          done
+
       - name: Run Unit Tests
         run: |
           python -m pytest -x -v --color=auto test/${{ matrix.setup }}
