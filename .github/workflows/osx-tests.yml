@@ -40,11 +40,11 @@ jobs:
         run: |
           for version in 3.15.7 3.16.9 3.17.5; do
             wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-Darwin-x86_64.tar.gz \
-              --exclude=bin/cmake-gui \
-              --exclude=doc/cmake \
-              --exclude=share/cmake-${version%.*}/Help \
-              --exclude=share/vim \
-              --exclude=share/vim
+              --exclude-directories=bin/cmake-gui \
+              --exclude-directories=doc/cmake \
+              --exclude-directories=share/cmake-${version%.*}/Help \
+              --exclude-directories=share/vim \
+              --exclude-directories=share/vim
             mkdir -p /opt/cmake/${version}
             cp -fR cmake-${version}-Darwin-x86_64/* /opt/cmake/${version}
             rm -rf cmake-${version}-Darwin-x86_64
@@ -52,11 +52,11 @@ jobs:
           done
           for version in 3.19.7 3.23.1; do
             wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-macos-universal.tar.gz \
-                --exclude=bin/cmake-gui \
-                --exclude=doc/cmake \
-                --exclude=share/cmake-${version%.*}/Help \
-                --exclude=share/vim \
-                --exclude=share/vim
+                --exclude-directories=bin/cmake-gui \
+                --exclude-directories=doc/cmake \
+                --exclude-directories=share/cmake-${version%.*}/Help \
+                --exclude-directories=share/vim \
+                --exclude-directories=share/vim
               mkdir -p /opt/cmake/${version}
               cp -fR cmake-${version}-macos-universal/* /opt/cmake/${version}
               rm -rf cmake-${version}-macos-universal
