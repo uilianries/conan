@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  testing-osx:
     runs-on: macos-latest
 
     steps:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.6.15'
+          python-version: '3.9'
           cache: 'pip'
 
       - name: Install dependencies
