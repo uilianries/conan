@@ -19,6 +19,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -67,7 +71,7 @@ jobs:
 
       - name: Install Ninja
         run: |
-          pip install ninja
+          pip install ninja==1.10.2
 
       - name: Install xcodegen
         run: |
