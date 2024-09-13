@@ -19,17 +19,25 @@ jobs:
           python-version: '3.9'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Install Python requirements
         run: |
           pip install -r conans/requirements.txt
           pip install -r conans/requirements_server.txt
           pip install -r conans/requirements_dev.txt
-          pip install meson
 
-      - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: "~3.23.0"
-          ninjaVersion: "1.10.2"
+      - name: Install Meson and Ninja
+        run: |
+          pip install meson
+          pip install ninja
+
+      - name: Install CMake versions
+        run: |
+          brew install cmake@3.15.7
+          brew install cmake@3.16.9
+          brew install cmake@3.17.5
+          brew install cmake@3.19.7
+          brew install cmake@3.23.1
+
 
       - name: Install xcodegen
         run: |
