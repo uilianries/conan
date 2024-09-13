@@ -38,16 +38,32 @@ jobs:
       - name: Install CMake versions
         working-directory: /tmp
         run: |
-          wget -q --no-check-certificate https://cmake.org/files/v3.15/cmake-3.15.7-Darwin-x86_64.tar.gz
-          tar -xzf cmake-3.15.7-Darwin-x86_64.tar.gz \
-            --exclude=CMake.app/Contents/bin/cmake-gui \
-            --exclude=CMake.app/Contents/doc/cmake \
-            --exclude=CMake.app/Contents/share/cmake-3.15/Help \
-            --exclude=CMake.app/Contents/share/vim
-          mkdir -p ${HOME}/Applications/CMake/3.15.7
-          cp -fR cmake-3.15.7-Darwin-x86_64/CMake.app/Contents/* ${HOME}/Applications/CMake/3.15.7
-          rm -rf cmake-3.15.7-Darwin-x86_64
-          rm cmake-3.15.7-Darwin-x86_64.tar.gz
+          for version in 3.15.7 3.16.9 3.17.5; do
+            wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-Darwin-x86_64.tar.gz
+            tar -xzf cmake-${version}-Darwin-x86_64.tar.gz \
+              --exclude=CMake.app/Contents/bin/cmake-gui \
+              --exclude=CMake.app/Contents/doc/cmake \
+              --exclude=CMake.app/Contents/share/cmake-{version%.*}/Help \
+              --exclude=CMake.app/Contents/share/vim
+            mkdir -p ${HOME}/Applications/CMake/${version}
+            cp -fR cmake-${version}-Darwin-x86_64/CMake.app/Contents/* ${HOME}/Applications/CMake/${version}
+            test /Users/runner/Application/cmake/${version}/bin/cmake
+            rm -rf cmake-${version}-Darwin-x86_64
+            rm cmake-${version}-Darwin-x86_64.tar.gz
+          done
+          for version in 3.19.7 3.23.1; do
+            wget -q --no-check-certificate https://cmake.org/files/v${version%.*}/cmake-${version}-macos-universal.tar.gz
+            tar -xzf cmake-${version}-macos-universal.tar.gz \
+              --exclude=CMake.app/Contents/bin/cmake-gui \
+              --exclude=CMake.app/Contents/doc/cmake \
+              --exclude=CMake.app/Contents/share/cmake-{version%.*}/Help \
+              --exclude=CMake.app/Contents/share/vim
+            mkdir -p ${HOME}/Applications/CMake/${version}
+            cp -fR cmake-${version}-macos-universal/CMake.app/Contents/* ${HOME}/Applications/CMake/${version}
+            test /Users/runner/Application/cmake/${version}/bin/cmake
+            rm -rf cmake-${version}-macos-universal
+            rm cmake-${version}-macos-universal.tar.gz
+          done
 
       - name: Run Unit Tests
         run: |
