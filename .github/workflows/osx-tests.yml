@@ -25,6 +25,11 @@ jobs:
           pip install -r conans/requirements_server.txt
           pip install -r conans/requirements_dev.txt
 
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.23.0"
+          ninjaVersion: "1.10.2"
+
       - name: Run tests
         run: |
           python -m pytest .
