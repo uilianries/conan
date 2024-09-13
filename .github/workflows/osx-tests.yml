@@ -1,0 +1,30 @@
+name: OSX Tests
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.6'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r conans/requirements.txt
+          pip install -r conans/requirements_server.txt
+          pip install -r conans/requirements_dev.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest .
