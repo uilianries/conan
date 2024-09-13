@@ -24,11 +24,20 @@ jobs:
           pip install -r conans/requirements.txt
           pip install -r conans/requirements_server.txt
           pip install -r conans/requirements_dev.txt
+          pip install meson
 
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: "~3.23.0"
           ninjaVersion: "1.10.2"
+
+      - name: Install xcodegen
+        run: |
+          brew install xcodegen
+
+      - name: Install bazel
+        run: |
+          brew install bazel
 
       - name: Run tests
         run: |
