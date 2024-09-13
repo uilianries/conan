@@ -9,6 +9,7 @@ jobs:
   testing-osx:
     runs-on: macos-latest
 
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,14 +31,29 @@ jobs:
           pip install meson
           pip install ninja
 
-      - name: Install CMake versions
-        run: |
-          brew install cmake@3.15.7
-          brew install cmake@3.16.9
-          brew install cmake@3.17.5
-          brew install cmake@3.19.7
-          brew install cmake@3.23.1
+      - name: Cache CMake
+        uses: actions/cache@v3
+        with:
+          path: /opt/cmake/${{ steps.cmake_version.outputs.version }}
+          key: cmake-${{ steps.cmake_version.outputs.version }}-${{ runner.os }}-${{ runner.arch }}
+          restore-keys: |
+            cmake-${{ runner.os }}-${{ runner.arch }}
 
+      - name: Install CMake versions
+        working-directory: /tmp
+        run: |
+          for version in 3.15.7 3.16.9 3.17.5 3.19.7 3.23.1; do
+            INSTALL_DIR=/opt/cmake/$version
+            if [ ! -d "$INSTALL_DIR" ]; then
+              curl -L https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version.tar.gz -o cmake-$version.tar.gz
+              tar -xzf cmake-$version.tar.gz
+              cd cmake-$version/
+              ./bootstrap --prefix=$INSTALL_DIR
+              make -j$(nproc)
+              make install
+              cd ..
+              rm -rf cmake-$version cmake-$version.tar.gz
+            fi
 
       - name: Install xcodegen
         run: |
