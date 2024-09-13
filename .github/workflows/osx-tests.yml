@@ -47,7 +47,7 @@ jobs:
               --exclude=CMake.app/Contents/share/vim
             mkdir -p ${HOME}/Applications/CMake/${version}
             cp -fR cmake-${version}-Darwin-x86_64/CMake.app/Contents/* ${HOME}/Applications/CMake/${version}
-            test /Users/runner/Application/cmake/${version}/bin/cmake
+            /Users/runner/Application/CMake/${version}/bin/cmake --version
             rm -rf cmake-${version}-Darwin-x86_64
             rm cmake-${version}-Darwin-x86_64.tar.gz
           done
@@ -60,7 +60,7 @@ jobs:
               --exclude=CMake.app/Contents/share/vim
             mkdir -p ${HOME}/Applications/CMake/${version}
             cp -fR cmake-${version}-macos-universal/CMake.app/Contents/* ${HOME}/Applications/CMake/${version}
-            test /Users/runner/Application/cmake/${version}/bin/cmake
+            /Users/runner/Application/CMake/${version}/bin/cmake --version
             rm -rf cmake-${version}-macos-universal
             rm cmake-${version}-macos-universal.tar.gz
           done
