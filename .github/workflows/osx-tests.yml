@@ -65,6 +65,14 @@ jobs:
             rm cmake-${version}-macos-universal.tar.gz
           done
 
+      - name: Install Ninja
+        run: |
+          pip install ninja
+
+      - name: Install xcodegen
+        run: |
+          brew install xcodegen
+
       - name: Run Unit Tests
         run: |
           python -m pytest -x -v --color=auto test/${{ matrix.setup }}
