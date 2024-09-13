@@ -38,11 +38,12 @@ jobs:
       - name: Install CMake versions
         working-directory: /tmp
         run: |
-          wget -q --no-check-certificate https://cmake.org/files/v3.15/cmake-3.15.7-Darwin-x86_64.tar.gz \
-            --exclude-directories=CMake.app/Contents/bin/cmake-gui \
-            --exclude-directories=CMake.app/Contents/doc/cmake \
-            --exclude-directories=CMake.app/Contents/share/cmake-3.15/Help \
-            --exclude-directories=CMake.app/Contents/share/vim \
+          wget -q --no-check-certificate https://cmake.org/files/v3.15/cmake-3.15.7-Darwin-x86_64.tar.gz
+          tar -xzf cmake-3.15.7-Darwin-x86_64.tar.gz \
+            --exclude=CMake.app/Contents/bin/cmake-gui \
+            --exclude=CMake.app/Contents/doc/cmake \
+            --exclude=CMake.app/Contents/share/cmake-3.15/Help \
+            --exclude=CMake.app/Contents/share/vim \
             -o cmake-3.15.7-Darwin-x86_64.tar.gz
           mkdir -p ${HOME}/Applications/CMake/3.15.7
           cp -fR cmake-3.15.7-Darwin-x86_64/CMake.app/Contents/* ${HOME}/Applications/CMake/3.15.7
