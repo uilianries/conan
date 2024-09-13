@@ -54,6 +54,7 @@ jobs:
               cd ..
               rm -rf cmake-$version cmake-$version.tar.gz
             fi
+          done
 
       - name: Install xcodegen
         run: |
