@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-        setup: [unittests, functional]
+        setup: [unittests, functional, integration, performance]
 
     runs-on: ${{ matrix.os }}
 
